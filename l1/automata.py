@@ -38,13 +38,13 @@ class Automata:
     def get_transitions(self, state, key):
         if isinstance(state, int):
             state = [state]
-        trstates = set()
+        tr_states = set()
         for st in state:
             if st in self.transitions:
                 for tns in self.transitions[st]:
                     if key in self.transitions[st][tns]:
-                        trstates.add(tns)
-        return trstates
+                        tr_states.add(tns)
+        return tr_states
 
     def new_build_from_number(self, start_num):
         translations = {}
@@ -59,6 +59,27 @@ class Automata:
                 rebuild.add_transitions(translations[from_state], translations[state], to_states[state])
 
         return rebuild, start_num
+
+    def get_e_closure(self, find_state):
+        all_states = set()
+        states = {find_state}
+        while len(states):
+            state = states.pop()
+            all_states.add(state)
+            if state in self.transitions:
+                for tns in self.transitions[state]:
+                    if Automata.EPSILON in self.transitions[state][tns] and tns not in all_states:
+                        states.add(tns)
+        return all_states
+
+    def accept_string(self, string):
+        current_state = self.start_state
+        for ch in string:
+            st = list(self.get_transitions(current_state, ch))
+            if not len(st):
+                return False
+            current_state = st[0]
+        return current_state in self.final_states
 
     def display_graph(self, filename):
         from graphviz import Digraph
