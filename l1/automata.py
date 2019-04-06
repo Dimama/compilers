@@ -21,7 +21,7 @@ class Automata:
         self.final_states += [s for s in states if s not in self.final_states]
 
     def add_transitions(self, from_state, to_state, value):
-        if isinstance(int, str):
+        if isinstance(value, str):
             value = set(value)
         self.states.add(from_state)
         self.states.add(to_state)
@@ -62,6 +62,16 @@ class Automata:
                 rebuild.add_transitions(translations[from_state], translations[state], to_states[state])
 
         return rebuild, start_num
+
+    def build_from_equivalent_states(self, pos):
+        rebuild = Automata(self.language)
+        for from_state, to_states in self.transitions.items():
+            for state in to_states:
+                rebuild.add_transitions(pos[from_state], pos[state], to_states[state])
+        rebuild.set_start_state(pos[self.start_state])
+        for s in self.final_states:
+            rebuild.add_final_states(pos[s])
+        return rebuild
 
     def get_e_closure(self, find_state):
         all_states = set()
