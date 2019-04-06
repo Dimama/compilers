@@ -1,3 +1,6 @@
+import pydot
+
+
 class Automata:
     EPSILON = "E"
 
@@ -96,7 +99,11 @@ class Automata:
                 for char in to_states[state]:
                     g.edge(str(from_state), str(state), label=char)
 
-        g.view()
+        #g.view()
+        dot_filename = filename + ".dot"
+        g.save(dot_filename)
+        (graph, ) = pydot.graph_from_dot_file(dot_filename)
+        graph.write_png(filename + ".png")
 
     def get_dot_file(self):
         dot_file_str = "digraph DFA {\nrankdir=LR\n"
