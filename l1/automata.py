@@ -109,26 +109,11 @@ class Automata:
                 for char in to_states[state]:
                     g.edge(str(from_state), str(state), label=char)
 
-        #g.view()
+        # g.view()
         dot_filename = filename + ".dot"
         g.save(dot_filename)
         (graph, ) = pydot.graph_from_dot_file(dot_filename)
         graph.write_png(filename + ".png")
-
-    def get_dot_file(self):
-        dot_file_str = "digraph DFA {\nrankdir=LR\n"
-        if len(self.states) != 0:
-            dot_file_str += "root=s1\nstart [shape=point]\nstart->s{}\n".format(self.start_state)
-            for state in self.states:
-                if state in self.final_states:
-                    dot_file_str += "s{} [shape=doublecircle]\n".format(state)
-                else:
-                    dot_file_str += "s{} [shape=circle]\n".format(state)
-            for from_state, to_states in self.transitions.items():
-                for state in to_states:
-                    for char in to_states[state]:
-                        dot_file_str += 's{}->s{} [label="{}"]\n'.format(from_state, state, char)
-        dot_file_str += "}"
 
     def __repr__(self):
         text = "language: {" + ", ".join(map(str, self.language)) + "}\n"

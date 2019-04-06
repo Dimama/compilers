@@ -98,8 +98,8 @@ class DFAFromNFA:
                             for s in st:
                                 pos[s] = p1
                             equivalent[p1] = equivalent[p1].union(st)
-        new_found = True
 
+        new_found = True
         while new_found and len(unchecked) > 0:
             new_found = False
             for p, pair in list(unchecked.items()):
