@@ -1,7 +1,6 @@
-from collections import defaultdict
 from json import load, dump
 
-from grammar import Grammar
+from grammar import Grammar, Production
 
 
 class GrammarFile:
@@ -30,13 +29,13 @@ class GrammarFile:
         if intersect:
             raise Exception("Terminals and non-terminals have the same symbols: {}".format(intersect))
 
-        grammar_productions = defaultdict(list)
+        grammar_productions = []
         for p in productions:
             left = p["l"]
             right = p["r"]
             if left not in non_terms or not set(right).issubset(set(non_terms + terms)):
                 raise Exception("Incorrect production: {} -> {}".format(left, "".join(right)))
-            grammar_productions[left].append(right)
+            grammar_productions.append(Production(left, right))
 
         return Grammar(non_terminals=set(non_terms),
                        terminals=set(terms),
@@ -51,9 +50,8 @@ class GrammarFile:
                         "start": g.start_symbol,
                         "productions": []}
 
-        for left, rights in g.productions.items():
-            for right in rights:
-                grammar_json["productions"].append({"l": left, "r": right})
+        for production in g.productions:
+            grammar_json["productions"].append({"l": production.left, "r": production.right})
 
         with open(filename, "w") as f:
             dump(grammar_json, f)

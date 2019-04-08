@@ -1,4 +1,6 @@
-from grammar import Grammar
+import itertools
+
+from grammar import Grammar, Production
 
 
 class GrammarConverter:
@@ -12,24 +14,44 @@ class GrammarConverter:
 
     @staticmethod
     def delete_eps_productions(g: Grammar) -> Grammar:
-        eps_produced_nonterminals = GrammarConverter.find_eps_produced_nonterminals(g)
+        grammar = Grammar(g.non_terminals, g.terminals, g.productions, g.start_symbol)
 
-        return g
+        eps_produced_nonterminals = GrammarConverter.find_eps_produced_nonterminals(grammar)
+        grammar.delete_eps_productions()
+
+        new_productions = []
+        for production in g.productions:
+            non_terms_positions = [i for i, value in enumerate(production.right) if value in eps_produced_nonterminals]
+            combinations = []
+            for i in range(len(non_terms_positions)):
+                combinations.extend(itertools.combinations(non_terms_positions, i+1))
+
+            for combination in combinations:
+                new_right = [production.right[i] for i in range(len(production.right)) if i not in combination]
+                if new_right:
+                    new_productions.append(Production(production.left, new_right))
+
+        grammar.productions.extend(new_productions)
+        if grammar.start_symbol in eps_produced_nonterminals:
+            new_start = grammar.start_symbol + "'"
+            grammar.add_production(new_start, [grammar.start_symbol])
+            grammar.add_production(new_start, [Grammar.EPS])
+            grammar.start_symbol = new_start
+
+        return grammar
 
     @staticmethod
     def find_eps_produced_nonterminals(g: Grammar) -> set:
         res_set = set()
-        for left, rights in g.productions.items():
-            for right in rights:
-                if len(right) == 1 and right[0] == Grammar.EPS:
-                    res_set.add(left)
+        for production in g.productions:
+            if len(production.right) == 1 and production.right[0] == Grammar.EPS:
+                res_set.add(production.left)
 
         count = len(res_set)
         while True:
-            for left, rights in g.productions.items():
-                for right in rights:
-                    if set(right).issubset(res_set):
-                        res_set.add(left)
+            for production in g.productions:
+                if set(production.right).issubset(res_set):
+                    res_set.add(production.left)
             if len(res_set) != count:
                 count = len(res_set)
             else:
