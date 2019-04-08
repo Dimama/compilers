@@ -2,6 +2,7 @@ class Grammar:
     """
     Class describing grammar
     """
+    EPS = "EPS"
 
     def __init__(self, non_terminals: set, terminals: set, productions: dict, start_symbol: str):
         self.non_terminals = non_terminals
