@@ -10,13 +10,34 @@ class GrammarConverter:
 
     @staticmethod
     def delete_left_recursion(g: Grammar) -> Grammar:
-        return g
+        grammar = Grammar(g.non_terminals, g.terminals, g.productions[:], g.start_symbol)
+        grammar = GrammarConverter.delete_eps_productions(grammar)
+
+        non_terms = grammar.non_terminals[:]
+        n = len(non_terms)
+        for i in range(n):
+            for j in range(i):
+                cur_productions = []
+                for p in grammar.productions:
+                    if p.left == non_terms[i] and p.right[0] == non_terms[j] and len(p.right) > 1:  # Ai -> Aj a
+                        er_productions = grammar.er_productions(p)
+                        cur_productions.extend(er_productions[:])
+                    else:
+                        cur_productions.append(p)
+                grammar.update_productions(cur_productions)
+
+            grammar.delete_directly_left_recursion(non_terms[i])
+
+        return grammar
 
     @staticmethod
     def delete_eps_productions(g: Grammar) -> Grammar:
-        grammar = Grammar(g.non_terminals, g.terminals, g.productions, g.start_symbol)
+        grammar = Grammar(g.non_terminals.copy(), g.terminals.copy(), g.productions[:], g.start_symbol)
 
         eps_produced_nonterminals = GrammarConverter.find_eps_produced_nonterminals(grammar)
+        if len(eps_produced_nonterminals) == 0:
+            return grammar
+
         grammar.delete_eps_productions()
 
         new_productions = []

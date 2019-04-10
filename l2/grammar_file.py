@@ -37,16 +37,16 @@ class GrammarFile:
                 raise Exception("Incorrect production: {} -> {}".format(left, "".join(right)))
             grammar_productions.append(Production(left, right))
 
-        return Grammar(non_terminals=set(non_terms),
-                       terminals=set(terms),
+        return Grammar(non_terminals=non_terms,
+                       terminals=terms,
                        start_symbol=start,
                        productions=grammar_productions)
 
     @staticmethod
     def save_grammar_to_file(g: Grammar, filename: str) -> None:
 
-        grammar_json = {"non_term": list(g.non_terminals),
-                        "term": list(g.terminals),
+        grammar_json = {"non_term": g.non_terminals,
+                        "term": g.terminals,
                         "start": g.start_symbol,
                         "productions": []}
 
