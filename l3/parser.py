@@ -3,141 +3,163 @@ from parse_tree import ParseTree
 
 class Parser:
     def __init__(self, string):
-        self.string = string
-        self.numbers = [str(i) for i in range(10)]
+        self.string = string.replace(" ", "")
         self.identifiers = list(chr(i) for i in range(65, 91))
-        self.identifiers.extend([chr(i) for i in range(97, 123)])
         self.index = 0
         self.tree = None
-        self.parse_error = ""
 
     def get_tree(self):
         return self.tree
 
     def accept_string(self):
-        return self._expression()
+        tree = self._expression()
+        if tree is not None and self._string_is_end():
+            self.tree = tree
+            return True
+
+        return False
 
     def _expression(self):
-        return self._arithmetic_expression() and self._rel_operation() and self._arithmetic_expression()
+        tree = ParseTree("Expr")
 
-    def _arithmetic_expression(self):
-        if self._arithmetic_expression() and self._add_operation() and self._term():
-            return True
+        node = self._log_expr()
+        if node is not None:
+            tree.add_child(node)
+            return tree
 
-        if self._add_operation() and self._term():
-            return True
+        return None
 
-        if self._term():
-            return True
+    def _log_expr(self):
+        tree = ParseTree("log expr")
 
-        return False
-        # return (self._arithmetic_expression() and self._add_operation() and self._term()) \
-        #     or (self._add_operation() and self._term()) or self._term()
+        log_node = self._log_mon()
+        if log_node is not None:
+            tree.add_child(log_node)
 
-    def _term(self):
-        if self._multiplier():
-            return True
+        log_expr_node = self._log_expr_()
+        if log_expr_node is not None:
+            tree.add_child(log_expr_node)
 
-        if self._term() and self._mul_operation() and self._multiplier():
-            return True
+        if tree.childs:
+            return tree
 
-        return False
-        # return self._multiplier() or (self._term() and self._mul_operation() and self._multiplier())
+        return None
 
-    def _multiplier(self):
+    def _log_expr_(self):
+        if self._out_of_range():
+            return None
 
-        if not self._primary_expression():
+        tree = ParseTree("log expr'")
 
-            if self._multiplier():
-                if self.string[self.index] == "^":
-                    self.index += 1
-                    if self._primary_expression():
-                        return True
-                    else:
-                        self.index -= 1
-
-            return False
-        return True
-
-    def _primary_expression(self):
-        if self._number():
-            return True
-
-        if self._identifier():
-            return True
-
-        if self.string[self.index] == "(":
+        if self.string[self.index] == "!":
             self.index += 1
-            if self._arithmetic_expression():
-                # проверку добавить
-                if self.string[self.index] == ")":
-                    self.index += 1
-                    return True
-                else:
-                    self.parse_error = "')' not found after arithmetic expression"
-            else:
-                self.parse_error = "Arithmetic expression not found after '('"
-                self.index -= 1
+            tree.add_child(ParseTree("!"))
 
-        return False
+            log_mon_node = self._log_mon()
+            if log_mon_node:
+                tree.add_child(log_mon_node)
+                log_expr_node = self._log_expr_()
+                if log_expr_node:
+                    tree.add_child(log_expr_node)
+                return tree
 
-    def _add_operation(self):
-        if self.string[self.index] in ["+", "-"]:
+        return None
+
+    def _log_mon(self):
+        tree = ParseTree("log mon")
+
+        sec_expr_node = self._sec_expr()
+        if sec_expr_node:
+            tree.add_child(sec_expr_node)
+
+        log_mon_node = self._log_mon_()
+        if log_mon_node is not None:
+            tree.add_child(log_mon_node)
+
+        if tree.childs:
+            return tree
+
+        return None
+
+    def _log_mon_(self):
+        if self._out_of_range():
+            return None
+
+        tree = ParseTree("log mon'")
+
+        if self.string[self.index] == "&":
             self.index += 1
-            return True
+            tree.add_child(ParseTree("&"))
 
-        return False
+            sec_expr_node = self._sec_expr()
 
-    def _mul_operation(self):
-        if self.string[self.index] in ["*", "/", "%"]:
+            if sec_expr_node:
+                tree.add_child(sec_expr_node)
+
+                log_mon_node = self._log_mon_()
+                if log_mon_node:
+                    tree.add_child(log_mon_node)
+
+                return tree
+
+        return None
+
+    def _sec_expr(self):
+
+        tree = ParseTree("sec_expr")
+
+        first_exp_node = self._first_expr()
+        if first_exp_node:
+            tree.add_child(first_exp_node)
+            return tree
+
+        if self._out_of_range():
+            return None
+
+        if self.string[self.index] == "~":
             self.index += 1
-            return True
+            tree.add_child(ParseTree("~"))
+            first_exp_node = self._first_expr()
+            if first_exp_node:
+                tree.add_child(first_exp_node)
+                return tree
 
-        return False
+        return None
 
-    def _rel_operation(self):
-        if self.string[self.index] == "<":
-            self.index += 1
-            if self._out_of_range():
-                self.parse_error = "Relation operator can not be last in string"
-                return False
+    def _first_expr(self):
 
-            if self.string[self.index] in [">", "="]:
-                self.index += 1
+        tree = ParseTree("first_expr")
 
-            return True
+        log_value_node = self._log_value()
+        if log_value_node:
+            tree.add_child(log_value_node)
+            return tree
 
-        if self.string[self.index] == ">":
-            self.index += 1
-            if self._out_of_range():
-                self.parse_error = "Relation operator can not be last in string"
-                return False
+        identifier_node = self._identifier()
+        if identifier_node:
+            tree.add_child(identifier_node)
+            return tree
 
-            if self.string[self.index] == "=":
-                self.index += 1
+        return None
 
-            return True
+    def _log_value(self):
+        tree = ParseTree("log value")
 
-        if self.string[self.index] == "=":
-            self.index += 1
-            return True
+        if self.string[self.index: self.index + 4] == "true":
+            self.index += 4
+            tree.add_child(ParseTree("true"))
+            return tree
 
-        return False
+        if self.string[self.index: self.index + 5] == "false":
+            self.index += 5
+            tree.add_child(ParseTree("false"))
+            return tree
 
-    def _number(self):
-        count = 0
-        while True:
-            if self._out_of_range():
-                break
-            if self.string[self.index] in self.numbers:
-                self.index += 1
-                count += 1
-            else:
-                break
-
-        return bool(count)
+        return None
 
     def _identifier(self):
+
+        tree = ParseTree("identifier")
         count = 0
         while True:
             if self._out_of_range():
@@ -148,10 +170,17 @@ class Parser:
             else:
                 break
 
-        return bool(count)
+        if count:
+            tree.add_child(ParseTree(self.string[self.index-count: self.index]))
+            return tree
+
+        return None
 
     def _out_of_range(self):
         return self.index > (len(self.string) - 1)
+
+    def _string_is_end(self):
+        return self.index == len(self.string)
 
     def __repr__(self):
         return f"{self.index}"
