@@ -1,32 +1,41 @@
-class ParseError(Exception):
-    pass
+from data import MARKER
 
 
-def parse(tokens, all_tokens, relation):
-    tokens = enumerate(tokens + ['$'])
+class ParseResult:
+    def __init__(self, is_correct, result):
+        self.is_correct = is_correct
+        self.result = result
 
-    res_string = ""
+    def __repr__(self):
+        return self.result
+
+
+def parse(tokens, all_tokens, relations):
+    tokens = enumerate(tokens + [MARKER])
+
+    result = []
     next_token_no, next_token = next(tokens)
-    stack_tail, stack_head = [], '$'
+    stack_tail, stack_head = [], MARKER
     while True:
         if next_token in all_tokens:
-            if stack_head == '$' and next_token == '$':
+            if stack_head == MARKER and next_token == MARKER:
                 break
-            current_relation = relation[stack_head][next_token]
-            if current_relation in ('<', '='):
+            relation = relations[stack_head][next_token]
+            if relation in ('<', '='):
                 stack_tail.append(stack_head)
                 stack_head = next_token
                 next_token_no, next_token = next(tokens)
                 continue
-            if current_relation == '>':
+            if relation == '>':
                 while True:
                     if stack_head not in ('(', ')'):
-                        res_string += stack_head
+                        result.append(stack_head)
                     old_stack_head = stack_head
                     stack_head = stack_tail.pop()
-                    if relation[stack_head][old_stack_head] == '<':
+                    if relations[stack_head][old_stack_head] == '<':
                         break
                 continue
-        raise ParseError(next_token_no)
 
-    return res_string
+        return ParseResult(False, f"Error in {next_token_no} token")
+
+    return ParseResult(True, " ".join(result))
