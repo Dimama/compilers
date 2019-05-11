@@ -43,3 +43,23 @@ class ParserTest(TestCase):
         tokens = "+' b * ( a -\" c )".split()
         parse_res = parse(tokens, all_tokens, self.relations)
         self.assertEqual(parse_res.result, "b a c -\" * +'")
+
+    def test8(self):
+        tokens = "( not a and b ) and ( c or d )".split()
+        parse_res = parse(tokens, all_tokens, self.relations)
+        self.assertEqual(parse_res.result, "a not b and c d or and")
+
+    def test9(self):
+        tokens = "( a * 2 ) mod c +\" (".split()
+        parse_res = parse(tokens, all_tokens, self.relations)
+        self.assertEqual(parse_res.is_correct, False)
+
+    def test10(self):
+        tokens = "abs a * abs ( b -\" c )".split()
+        parse_res = parse(tokens, all_tokens, self.relations)
+        self.assertEqual(parse_res.result, "a abs b c -\" abs *")
+
+    def test11(self):
+        tokens = "( a b * c )".split()
+        parse_res = parse(tokens, all_tokens, self.relations)
+        self.assertEqual(parse_res.is_correct, False)
